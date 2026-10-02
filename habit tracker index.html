@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Habit Tracker</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✅</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FBFAF8;
+  --ink: #33363B;
+  --muted: #8A8D93;
+  --rule: #D9D9DD;
+  --rule-strong: #B9BABF;
+  --today-bg: rgba(51,54,59,0.04);
+  --c0: #F2BFC8; /* Sun  */
+  --c1: #F6C2B1; /* Mon  */
+  --c2: #F0DDAF; /* Tue  */
+  --c3: #CBD9D1; /* Wed  */
+  --c4: #C8D6E3; /* Thu  */
+  --c5: #DCD3E6; /* Fri  */
+  --c6: #F7CFD8; /* Sat  */
+  --c0-on: #E07E92;
+  --c1-on: #EA8E6E;
+  --c2-on: #DDB24E;
+  --c3-on: #7FA791;
+  --c4-on: #7798BC;
+  --c5-on: #A08BBF;
+  --c6-on: #EA8FA6;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1B1C1F;
+    --ink: #ECECEE;
+    --muted: #9A9CA2;
+    --rule: #34363B;
+    --rule-strong: #4A4C52;
+    --today-bg: rgba(255,255,255,0.05);
+    --c0: #4A3237; --c1: #4B372F; --c2: #4A4230; --c3: #344039;
+    --c4: #313C47; --c5: #3D3746; --c6: #4C343B;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1B1C1F;
+  --ink: #ECECEE;
+  --muted: #9A9CA2;
+  --rule: #34363B;
+  --rule-strong: #4A4C52;
+  --today-bg: rgba(255,255,255,0.05);
+  --c0: #4A3237; --c1: #4B372F; --c2: #4A4230; --c3: #344039;
+  --c4: #313C47; --c5: #3D3746; --c6: #4C343B;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Josefin Sans', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+
+header {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  gap: 16px; flex-wrap: wrap; margin-bottom: 28px;
+}
+h1 { font-size: clamp(32px, 8vw, 54px); font-weight: 400; letter-spacing: .02em; line-height: 1; }
+h1 .h { color: var(--c0-on); opacity: .55; }
+h1 .a { color: var(--c2-on); opacity: .65; }
+h1 .b { color: var(--c3-on); opacity: .55; }
+h1 .i { color: var(--c2-on); opacity: .65; }
+h1 .t { color: var(--c2-on); opacity: .65; }
+
+.dates { text-align: right; min-width: 180px; }
+.dates .label { font-size: 13px; letter-spacing: .12em; color: var(--muted); }
+.dates .range {
+  font-size: 16px; padding: 6px 0 6px; border-bottom: 2px solid var(--rule-strong);
+  margin-top: 4px; font-variant-numeric: tabular-nums;
+}
+.dates .reset { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+.summary {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+  font-size: 14px; color: var(--muted);
+}
+.bar { flex: 1; height: 6px; border-radius: 3px; background: var(--rule); overflow: hidden; }
+.bar > span { display: block; height: 100%; width: 0; background: var(--c3-on); transition: width .25s ease; }
+.summary strong { color: var(--ink); font-weight: 600; }
+
+table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+th, td { border-bottom: 1px solid var(--rule); }
+thead th {
+  font-weight: 400; font-size: 17px; letter-spacing: .1em; padding: 10px 0;
+  border-bottom: 2px solid var(--rule-strong); color: var(--ink);
+}
+thead th.habit-col { text-align: left; }
+th.day { width: 44px; text-align: center; }
+th.day small { display: block; font-size: 10px; letter-spacing: 0; color: var(--muted); margin-top: 2px; }
+td.habit { padding: 14px 8px 14px 0; font-size: 16px; line-height: 1.3; }
+td.habit .n { display: inline-block; min-width: 1.9em; color: var(--muted); }
+td.cell { text-align: center; padding: 6px 0; }
+.today-col { background: var(--today-bg); }
+thead th.today-col { font-weight: 600; }
+
+.dot {
+  width: 32px; height: 32px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--dc); display: inline-grid; place-items: center;
+  transition: transform .12s ease, background-color .15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.dot:hover { transform: scale(1.08); }
+.dot:active { transform: scale(.92); }
+.dot:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.dot svg { width: 16px; height: 16px; opacity: 0; transition: opacity .15s; }
+.dot[aria-pressed="true"] { background: var(--dc-on); }
+.dot[aria-pressed="true"] svg { opacity: 1; }
+.dot.future { opacity: .45; }
+
+tr.done-today td.habit { color: var(--muted); }
+tr.done-today td.habit .txt { text-decoration: line-through; text-decoration-color: var(--rule-strong); }
+
+.footer {
+  margin-top: 24px; display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--muted);
+}
+.footer button {
+  font: inherit; color: var(--muted); background: none; border: 1px solid var(--rule-strong);
+  border-radius: 999px; padding: 6px 14px; cursor: pointer;
+}
+.footer button:hover { color: var(--ink); border-color: var(--ink); }
+
+@media (max-width: 560px) {
+  th.day { width: 34px; }
+  thead th { font-size: 14px; }
+  td.habit { font-size: 14px; }
+  .dot { width: 26px; height: 26px; }
+  .dot svg { width: 13px; height: 13px; }
+  .dates { text-align: left; }
+}
+@media (max-width: 380px) {
+  th.day { width: 30px; }
+  .dot { width: 23px; height: 23px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span class="h">H</span><span class="a">A</span><span class="b">B</span><span class="i">I</span><span class="t">T</span> TRACKER</h1>
+    <div class="dates">
+      <div class="label">DATES:</div>
+      <div class="range" id="range"></div>
+      <div class="reset" id="resetNote"></div>
+    </div>
+  </header>
+
+  <div class="summary">
+    <span>Today: <strong id="todayCount">0</strong> / <span id="todayTotal">0</span></span>
+    <div class="bar"><span id="todayBar"></span></div>
+    <span>Week: <strong id="weekPct">0%</strong></span>
+  </div>
+
+  <table>
+    <thead><tr id="headRow"><th class="habit-col">HABITS</th></tr></thead>
+    <tbody id="body"></tbody>
+  </table>
+
+  <div class="footer">
+    <span>Checks are saved on this device and clear automatically every Sunday.</span>
+    <button type="button" id="clearBtn">Clear this week</button>
+  </div>
+</div>
+
+<script>
+const HABITS = [
+  'Vykon supplements',
+  'Bitters',
+  'Adrenal cocktails',
+  'Magnesium oil',
+  'Magnesium baths',
+  'Brazil nuts',
+  'Humming / EPT tapping / box breathing',
+  'Beef liver supplement',
+  'Nettle tea',
+  'Dandelion tea',
+  'Oat straw tea',
+  'Broccoli sprouts',
+  'Coconut oil pulling',
+  'Castor oil packs',
+  'Follicular fasting',
+  'Acupressure mat',
+];
+
+// Week runs Sunday → Saturday so that a new, empty week starts every Sunday.
+const DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const STORE_PREFIX = 'habit-tracker:week:';
+const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+function ymd(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function weekStart(now) {
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  d.setDate(d.getDate() - d.getDay());
+  return d;
+}
+
+function load(key) {
+  try { return JSON.parse(localStorage.getItem(key)) || {}; } catch (e) { return {}; }
+}
+function save(key, data) {
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch (e) {}
+}
+function pruneOldWeeks(currentKey) {
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(STORE_PREFIX) && k !== currentKey) localStorage.removeItem(k);
+    }
+  } catch (e) {}
+}
+
+let state, storeKey, start, todayIdx;
+
+function render() {
+  const now = new Date();
+  start = weekStart(now);
+  todayIdx = now.getDay();
+  storeKey = STORE_PREFIX + ymd(start);
+  pruneOldWeeks(storeKey);
+  state = load(storeKey);
+
+  const end = new Date(start); end.setDate(end.getDate() + 6);
+  const fmt = { month: 'short', day: 'numeric' };
+  document.getElementById('range').textContent =
+    start.toLocaleDateString(undefined, fmt) + ' – ' + end.toLocaleDateString(undefined, fmt);
+  const next = new Date(start); next.setDate(next.getDate() + 7);
+  document.getElementById('resetNote').textContent =
+    'Resets Sunday, ' + next.toLocaleDateString(undefined, fmt);
+
+  const head = document.getElementById('headRow');
+  head.querySelectorAll('th.day').forEach(th => th.remove());
+  DAYS.forEach((d, i) => {
+    const th = document.createElement('th');
+    th.className = 'day' + (i === todayIdx ? ' today-col' : '');
+    const date = new Date(start); date.setDate(date.getDate() + i);
+    th.innerHTML = d + '<small>' + date.getDate() + '</small>';
+    head.appendChild(th);
+  });
+
+  const body = document.getElementById('body');
+  body.innerHTML = '';
+  HABITS.forEach((name, h) => {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.className = 'habit';
+    td.innerHTML = '<span class="n">' + (h + 1) + '.</span><span class="txt"></span>';
+    td.querySelector('.txt').textContent = name;
+    tr.appendChild(td);
+    DAYS.forEach((d, i) => {
+      const cell = document.createElement('td');
+      cell.className = 'cell' + (i === todayIdx ? ' today-col' : '');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'dot' + (i > todayIdx ? ' future' : '');
+      btn.style.setProperty('--dc', 'var(--c' + i + ')');
+      btn.style.setProperty('--dc-on', 'var(--c' + i + '-on)');
+      btn.setAttribute('aria-label', name + ', ' + ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][i]);
+      btn.setAttribute('aria-pressed', state[h + ':' + i] ? 'true' : 'false');
+      btn.innerHTML = CHECK_SVG;
+      btn.addEventListener('click', () => toggle(h, i, btn));
+      cell.appendChild(btn);
+      tr.appendChild(cell);
+    });
+    body.appendChild(tr);
+  });
+  updateSummary();
+}
+
+function toggle(h, i, btn) {
+  // If the week rolled over while the page was open, start fresh first.
+  if (STORE_PREFIX + ymd(weekStart(new Date())) !== storeKey) { render(); return; }
+  const key = h + ':' + i;
+  if (state[key]) delete state[key]; else state[key] = 1;
+  save(storeKey, state);
+  btn.setAttribute('aria-pressed', state[key] ? 'true' : 'false');
+  updateSummary();
+}
+
+function updateSummary() {
+  const rows = document.querySelectorAll('#body tr');
+  let today = 0, week = 0;
+  HABITS.forEach((_, h) => {
+    const done = !!state[h + ':' + todayIdx];
+    if (done) today++;
+    rows[h].classList.toggle('done-today', done);
+    for (let i = 0; i <= todayIdx; i++) if (state[h + ':' + i]) week++;
+  });
+  document.getElementById('todayCount').textContent = today;
+  document.getElementById('todayTotal').textContent = HABITS.length;
+  document.getElementById('todayBar').style.width = (today / HABITS.length * 100) + '%';
+  document.getElementById('weekPct').textContent =
+    Math.round(week / (HABITS.length * (todayIdx + 1)) * 100) + '%';
+}
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (!confirm('Clear all checks for this week?')) return;
+  state = {};
+  save(storeKey, state);
+  render();
+});
+
+// Re-check for a new day/week when the tab comes back into view or every minute.
+let lastDay = ymd(new Date());
+function checkRollover() {
+  const d = ymd(new Date());
+  if (d !== lastDay) { lastDay = d; render(); }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkRollover(); });
+setInterval(checkRollover, 60000);
+
+render();
+</script>
+</body>
+</html>
